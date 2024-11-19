@@ -1,0 +1,3 @@
+pyrogram==2.0.106
+ffmpeg-python==0.2.0
+pymongo==4.5.0
