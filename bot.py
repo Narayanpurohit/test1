@@ -126,7 +126,7 @@ def plan_details(client, callback_query):
     f"✶ Parallel Processes: {details['parallel_process']}\n"
     f"✶ Time Gap: {'No' if details['time_gap'] == 0 else f\"{details['time_gap'] // 60} Minutes\"}\n"
     f"✶ Auto Watermark: {'Yes' if details['auto_watermark'] else 'No'}" 
-    )
+)
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Buy Plan", callback_data=f"buy_{plan.lower()}")],
         [InlineKeyboardButton("Back", callback_data="upgrade")]
