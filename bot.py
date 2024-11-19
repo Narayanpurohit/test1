@@ -90,7 +90,7 @@ def start_command(client, message):
     user_id = message.from_user.id
     name = message.from_user.first_name
     initialize_user(user_id, name)
-    message.reply_text(
+    await message.reply_text(
         f"Welcome {name}!\n"
         "I'm your video processing bot.\n\n"
         "Use /help to see the available commands."
@@ -98,7 +98,7 @@ def start_command(client, message):
 
 @app.on_message(filters.command("help"))
 def help_command(client, message):
-    message.reply_text(
+    await message.reply_text(
         "Available Commands:\n"
         "/upgrade - View subscription plans\n"
         "/set_watermark - Configure watermark settings\n"
@@ -113,7 +113,7 @@ def upgrade_command(client, message):
         [InlineKeyboardButton("⭐ Standard", callback_data="plan_standard")],
         [InlineKeyboardButton("🌟 Premium", callback_data="plan_premium")]
     ])
-    message.reply_text("Choose a plan to see details:", reply_markup=keyboard)
+    await message.reply_text("Choose a plan to see details:", reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex(r"plan_(free|basic|standard|premium)"))
 def plan_details(client, callback_query):
@@ -152,7 +152,7 @@ def set_watermark_command(client, message):
         [InlineKeyboardButton("Image", callback_data="watermark_image")],
         [InlineKeyboardButton("Text", callback_data="watermark_text")]
     ])
-    message.reply_text("Choose watermark type:", reply_markup=keyboard)
+    await message.reply_text("Choose watermark type:", reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex(r"watermark_(image|text)"))
 def watermark_type(client, callback_query):
@@ -171,7 +171,7 @@ def video_handler(client, message):
     user_id = message.from_user.id
     user_data = users.find_one({"user_id": user_id})
     if not user_data:
-        message.reply_text("Please use /start first to initialize your account.")
+        await message.reply_text("Please use /start first to initialize your account.")
         return
 
     # Check for daily upload limit
@@ -179,13 +179,13 @@ def video_handler(client, message):
     plan_details = PLANS[plan]
     daily_upload = user_data.get("daily_upload", 0)
     if daily_upload >= plan_details["daily_upload_limit"]:
-        message.reply_text("You've reached your daily upload limit. Upgrade your plan using /upgrade.")
+        await message.reply_text("You've reached your daily upload limit. Upgrade your plan using /upgrade.")
         return
 
     # File size check
     file_size = message.video.file_size if message.video else message.document.file_size
     if file_size > plan_details["file_size_limit"]:
-        message.reply_text("The file size exceeds your plan's limit. Upgrade your plan to upload larger files.")
+        await message.reply_text("The file size exceeds your plan's limit. Upgrade your plan to upload larger files.")
         return
 
     # Auto watermark check
@@ -194,7 +194,7 @@ def video_handler(client, message):
             [InlineKeyboardButton("Yes", callback_data="rename_yes")],
             [InlineKeyboardButton("No", callback_data="rename_no")]
         ])
-        message.reply_text("Do you want to rename the file?", reply_markup=keyboard)
+        await message.reply_text("Do you want to rename the file?", reply_markup=keyboard)
         app.set_chat_data(user_id, "video_message", message)
     else:
         process_video(client, message, user_data)
@@ -230,7 +230,7 @@ def rename_file_handler(client, message):
             user_data = users.find_one({"user_id": user_id})
             process_video(client, video_message, user_data, new_file_name)
         else:
-            message.reply_text("Error: Video not found. Please try again.")
+            await message.reply_text("Error: Video not found. Please try again.")
         app.set_chat_data(user_id, "rename_file", False)  # Reset rename flag
 
 
@@ -248,7 +248,7 @@ def process_video(client, message, user_data, new_file_name=None):
     try:
         apply_watermark(download_path, processed_path, watermark_settings)
     except Exception as e:
-        message.reply_text(f"Failed to process video: {e}")
+        await message.reply_text(f"Failed to process video: {e}")
         os.remove(download_path)
         return
 
@@ -261,14 +261,14 @@ def process_video(client, message, user_data, new_file_name=None):
                 video=processed_path,
                 caption=f"Processed video from user {user_id}."
             )
-            message.reply_text("Your video is ready! Sending as a copy.")
+            await message.reply_text("Your video is ready! Sending as a copy.")
             client.copy_message(
                 chat_id=user_id,
                 from_chat_id=LOG_CHANNEL_ID,
                 message_id=sent_message.message_id
             )
     else:
-        message.reply_video(video=processed_path, caption="Here is your processed video!")
+        await message.reply_video(video=processed_path, caption="Here is your processed video!")
 
     # Cleanup
     os.remove(download_path)
