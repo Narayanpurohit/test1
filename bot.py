@@ -120,13 +120,13 @@ def plan_details(client, callback_query):
     plan = callback_query.data.split("_")[1].capitalize()
     details = PLANS[plan]
     text = (
-        f"{plan} Plan Details: "
-        f"\n✶ Daily Upload: {details['daily_upload_limit'] // (1024 ** 3)} GB\n"
-        f"✶ File Upload Size: {details['file_size_limit'] // (1024 ** 3)} GB\n"
-        f"✶ Parallel Processes: {details['parallel_process']}\n"
-        f"✶ Time Gap: {'No' if details['time_gap'] == 0 else f'{details['time_gap'] // 60} Minutes'}\n"
-        f"✶ Auto Watermark: {'Yes' if details['auto_watermark'] else 'No'}"
-    )
+    f"{plan} Plan Details: "
+    f"\n✶ Daily Upload: {details['daily_upload_limit'] // (1024 ** 3)} GB\n"
+    f"✶ File Upload Size: {details['file_size_limit'] // (1024 ** 3)} GB\n"
+    f"✶ Parallel Processes: {details['parallel_process']}\n"
+    f"✶ Time Gap: {'No' if details['time_gap'] == 0 else f'{details['time_gap'] // 60} Minutes'}\n"
+    f"✶ Auto Watermark: {'Yes' if details['auto_watermark'] else 'No'}"
+)
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Buy Plan", callback_data=f"buy_{plan.lower()}")],
         [InlineKeyboardButton("Back", callback_data="upgrade")]
