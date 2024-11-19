@@ -124,7 +124,7 @@ def plan_details(client, callback_query):
     f"\n✶ Daily Upload: {details['daily_upload_limit'] // (1024 ** 3)} GB\n"
     f"✶ File Upload Size: {details['file_size_limit'] // (1024 ** 3)} GB\n"
     f"✶ Parallel Processes: {details['parallel_process']}\n"
-    f"✶ Time Gap: {'No' if details['time_gap'] == 0 else f'{details[\'time_gap\'] // 60} Minutes'}\n"
+    f"✶ Time Gap: {'No' if details['time_gap'] == 0 else f'yes'}\n"
     f"✶ Auto Watermark: {'Yes' if details['auto_watermark'] else 'No'}"
 )
     keyboard = InlineKeyboardMarkup([
