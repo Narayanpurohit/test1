@@ -159,7 +159,7 @@ async def watermark_type(client, callback_query):
     watermark_type = "text"
     user_id = callback_query.from_user.id
     users.update_one({"user_id": user_id}, {"$set": {"watermark.type": watermark_type}})
-    watermark_text= await ask(client,user_id,
+    watermark_text= await app.ask(client,user_id,
         f"Send your {watermark_type} watermark content (text or image)."
     )
     await users.update_one({"user_id": user_id}, {"$set": {"watermark.content": watermark_text}})
