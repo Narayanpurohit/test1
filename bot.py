@@ -5,6 +5,9 @@ import os
 import ffmpeg
 
 
+
+
+
 # ---------- Variables Section ----------
 API_ID = 15191874
 API_HASH = "3037d39233c6fad9b80d83bb8a339a07"
@@ -73,6 +76,33 @@ async def initialize_user(user_id, name):
             "daily_upload": 0,
             "watermark": DEFAULT_WATERMARK
         })
+
+
+
+import asyncio
+
+async def ask(client, chat_id, question):
+    """
+    Custom method to send a question to a user and wait for their response.
+    """
+    # Send the question to the user
+    question_message = await client.send_message(chat_id, question)
+
+    # Wait for the response
+    loop = asyncio.get_event_loop()
+    future = loop.create_future()
+
+    # Define a handler to capture the response
+    @client.on_message(filters.chat(chat_id) & filters.text)
+    async def handler(_, message):
+        future.set_result(message.text.strip())
+        client.remove_handler(handler)  # Remove the handler after capturing the response
+
+    response = await future
+    await question_message.delete()  # Delete the question message to keep the chat clean
+    return response
+
+
 
 async def get_user_plan(user_id):
     """Fetch user's plan."""
