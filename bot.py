@@ -206,8 +206,15 @@ async def rename_file_callback(client, callback_query):
     action = callback_query.data.split("_")[1]
 
     if action == "yes":
-        await callback_query.message.reply_text("Send me the new file name (without extension).")
-        app.set_chat_data(user_id, "rename_file", True)
+        new_file_name = await ask(client, user_id, "Please send the new file name (without extension).")
+        app.set_chat_data(user_id, "new_file_name", new_file_name)
+        video_message = app.get_chat_data(user_id, "video_message")
+        if video_message:
+            user_data = users.find_one({"user_id": user_id})
+            process_video(client, video_message, user_data, new_file_name)
+        else:
+            await message.reply_text("Error: Video not found. Please try again.")
+        
     else:
         video_message = app.get_chat_data(user_id, "video_message")
         if video_message:
@@ -216,22 +223,6 @@ async def rename_file_callback(client, callback_query):
         else:
             await callback_query.message.reply_text("Error: Video not found. Please try again.")
 
-
-@app.on_message(filters.text)
-async def rename_file_handler(client, message):
-    user_id = message.from_user.id
-    rename_file_flag = app.get_chat_data(user_id, "rename_file")
-
-    if rename_file_flag:
-        new_file_name = message.text.strip()
-        app.set_chat_data(user_id, "new_file_name", new_file_name)
-        video_message = app.get_chat_data(user_id, "video_message")
-        if video_message:
-            user_data = users.find_one({"user_id": user_id})
-            process_video(client, video_message, user_data, new_file_name)
-        else:
-            await message.reply_text("Error: Video not found. Please try again.")
-        app.set_chat_data(user_id, "rename_file", False)  # Reset rename flag
 
 
 async def process_video(client, message, user_data, new_file_name=None):
