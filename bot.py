@@ -63,7 +63,7 @@ db = client["video_bot"]
 users = db["users"]
 
 # ---------- Helper Functions ----------
-asyc deafinitialize_user(user_id, name):
+async def initialize_user(user_id, name):
     """Initialize new user with default settings."""
     if not users.find_one({"user_id": user_id}):
         users.insert_one({
@@ -74,19 +74,19 @@ asyc deafinitialize_user(user_id, name):
             "watermark": DEFAULT_WATERMARK
         })
 
-asyc deafget_user_plan(user_id):
+async def get_user_plan(user_id):
     """Fetch user's plan."""
     user = users.find_one({"user_id": user_id})
     return user.get("plan", "Free") if user else "Free"
 
-asyc deafget_user_watermark(user_id):
+async def get_user_watermark(user_id):
     """Fetch user's watermark settings."""
     user = users.find_one({"user_id": user_id})
     return user.get("watermark", DEFAULT_WATERMARK)
 
 # ---------- Bot Handlers ----------
 @app.on_message(filters.command("start"))
-asyc deafstart_command(client, message):
+async def start_command(client, message):
     user_id = message.from_user.id
     name = message.from_user.first_name
     initialize_user(user_id, name)
@@ -97,7 +97,7 @@ asyc deafstart_command(client, message):
     )
 
 @app.on_message(filters.command("help"))
-asyc deafhelp_command(client, message):
+async def help_command(client, message):
     await message.reply_text(
         "Available Commands:\n"
         "/upgrade - View subscription plans\n"
@@ -106,7 +106,7 @@ asyc deafhelp_command(client, message):
     )
 
 @app.on_message(filters.command("upgrade"))
-asyc deafupgrade_command(client, message):
+async def upgrade_command(client, message):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🌱 Free", callback_data="plan_free")],
         [InlineKeyboardButton("⚡ Basic", callback_data="plan_basic")],
@@ -116,7 +116,7 @@ asyc deafupgrade_command(client, message):
     await message.reply_text("Choose a plan to see details:", reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex(r"plan_(free|basic|standard|premium)"))
-asyc deafplan_details(client, callback_query):
+async def plan_details(client, callback_query):
     plan = callback_query.data.split("_")[1].capitalize()
     details = PLANS[plan]
     text = (
@@ -134,7 +134,7 @@ asyc deafplan_details(client, callback_query):
     callback_query.message.edit_text(text, reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex(r"buy_(free|basic|standard|premium)"))
-asyc deafbuy_plan(client, callback_query):
+async def buy_plan(client, callback_query):
     plan = callback_query.data.split("_")[1].capitalize()
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Send Screenshot to Owner", url="t.me/OWNER_USERNAME")]
@@ -147,7 +147,7 @@ asyc deafbuy_plan(client, callback_query):
     )
 
 @app.on_message(filters.command("set_watermark"))
-asyc deafset_watermark_command(client, message):
+async def set_watermark_command(client, message):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Image", callback_data="watermark_image")],
         [InlineKeyboardButton("Text", callback_data="watermark_text")]
@@ -155,7 +155,7 @@ asyc deafset_watermark_command(client, message):
     await message.reply_text("Choose watermark type:", reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex(r"watermark_(image|text)"))
-asyc deafwatermark_type(client, callback_query):
+async def watermark_type(client, callback_query):
     watermark_type = callback_query.data.split("_")[1]
     user_id = callback_query.from_user.id
     users.update_one({"user_id": user_id}, {"$set": {"watermark.type": watermark_type}})
@@ -167,7 +167,7 @@ asyc deafwatermark_type(client, callback_query):
 
 
 @app.on_message(filters.video | filters.document)
-asyc deafvideo_handler(client, message):
+async def video_handler(client, message):
     user_id = message.from_user.id
     user_data = users.find_one({"user_id": user_id})
     if not user_data:
@@ -201,7 +201,7 @@ asyc deafvideo_handler(client, message):
 
 
 @app.on_callback_query(filters.regex(r"rename_(yes|no)"))
-asyc deafrename_file_callback(client, callback_query):
+async def rename_file_callback(client, callback_query):
     user_id = callback_query.from_user.id
     action = callback_query.data.split("_")[1]
 
@@ -218,7 +218,7 @@ asyc deafrename_file_callback(client, callback_query):
 
 
 @app.on_message(filters.text)
-asyc deafrename_file_handler(client, message):
+async def rename_file_handler(client, message):
     user_id = message.from_user.id
     rename_file_flag = app.get_chat_data(user_id, "rename_file")
 
@@ -234,7 +234,7 @@ asyc deafrename_file_handler(client, message):
         app.set_chat_data(user_id, "rename_file", False)  # Reset rename flag
 
 
-asyc deafprocess_video(client, message, user_data, new_file_name=None):
+async def process_video(client, message, user_data, new_file_name=None):
     user_id = message.from_user.id
     file_id = message.video.file_id if message.video else message.document.file_id
     file_name = new_file_name or message.video.file_name or message.document.file_name
@@ -278,7 +278,7 @@ asyc deafprocess_video(client, message, user_data, new_file_name=None):
     users.update_one({"user_id": user_id}, {"$inc": {"daily_upload": file_size}})
 
 
-asyc deafapply_watermark(input_path, output_path, watermark_settings):
+async def apply_watermark(input_path, output_path, watermark_settings):
     watermark_type = watermark_settings["type"]
     content = watermark_settings["content"]
     position = watermark_settings["position"]
