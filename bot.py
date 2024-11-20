@@ -131,7 +131,7 @@ async def plan_details(client, callback_query):
         [InlineKeyboardButton("Buy Plan", callback_data=f"buy_{plan.lower()}")],
         [InlineKeyboardButton("Back", callback_data="upgrade")]
     ])
-    callback_query.message.edit_text(text, reply_markup=keyboard)
+    await callback_query.message.edit_text(text, reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex(r"buy_(free|basic|standard|premium)"))
 async def buy_plan(client, callback_query):
@@ -139,7 +139,7 @@ async def buy_plan(client, callback_query):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Send Screenshot to Owner", url="t.me/OWNER_USERNAME")]
     ])
-    callback_query.message.edit_text(
+    await callback_query.message.edit_text(
         f"To purchase the {plan} plan, pay using the following details:\n\n"
         f"UPI ID: {UPI_ID}\n\n"
         f"After payment, send a screenshot using the button below.",
@@ -159,7 +159,7 @@ async def watermark_type(client, callback_query):
     watermark_type = callback_query.data.split("_")[1]
     user_id = callback_query.from_user.id
     users.update_one({"user_id": user_id}, {"$set": {"watermark.type": watermark_type}})
-    callback_query.message.reply_text(
+    await callback_query.message.reply_text(
         f"Send your {watermark_type} watermark content (text or image)."
     )
 
@@ -206,7 +206,7 @@ async def rename_file_callback(client, callback_query):
     action = callback_query.data.split("_")[1]
 
     if action == "yes":
-        callback_query.message.reply_text("Send me the new file name (without extension).")
+        await callback_query.message.reply_text("Send me the new file name (without extension).")
         app.set_chat_data(user_id, "rename_file", True)
     else:
         video_message = app.get_chat_data(user_id, "video_message")
@@ -214,7 +214,7 @@ async def rename_file_callback(client, callback_query):
             user_data = users.find_one({"user_id": user_id})
             process_video(client, video_message, user_data)
         else:
-            callback_query.message.reply_text("Error: Video not found. Please try again.")
+            await callback_query.message.reply_text("Error: Video not found. Please try again.")
 
 
 @app.on_message(filters.text)
