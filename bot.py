@@ -81,26 +81,6 @@ async def initialize_user(user_id, name):
 
 import asyncio
 
-async def ask(client, chat_id, question):
-    """
-    Custom method to send a question to a user and wait for their response.
-    """
-    # Send the question to the user
-    question_message = await client.send_message(chat_id, question)
-
-    # Wait for the response
-    loop = asyncio.get_event_loop()
-    future = loop.create_future()
-
-    # Define a handler to capture the response
-    @client.on_message(filters.chat(chat_id) & filters.text)
-    async def handler(_, message):
-        future.set_result(message.text.strip())
-        client.remove_handler(handler)  # Remove the handler after capturing the response
-
-    response = await future
-    await question_message.delete()  # Delete the question message to keep the chat clean
-    return response
 
 
 
@@ -196,7 +176,7 @@ async def watermark_type(client, callback_query):
     )
 
     # Ask for the watermark text
-    watermark_text = await ask(client, user_id, "Send your text watermark content.")
+    watermark_text = await app.ask(client, user_id, "Send your text watermark content.")
 
     # Update the watermark content
     users.update_one(
