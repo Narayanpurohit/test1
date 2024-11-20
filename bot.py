@@ -156,7 +156,7 @@ async def set_watermark_command(client, message):
 
 @app.on_callback_query(filters.regex(r"watermark_text"))
 async def watermark_type(client, callback_query):
-    watermark_type = text
+    watermark_type = "text"
     user_id = callback_query.from_user.id
     users.update_one({"user_id": user_id}, {"$set": {"watermark.type": watermark_type}})
     watermark_text= await ask(client,user_id,
