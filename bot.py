@@ -154,14 +154,16 @@ async def set_watermark_command(client, message):
     ])
     await message.reply_text("Choose watermark type:", reply_markup=keyboard)
 
-@app.on_callback_query(filters.regex(r"watermark_(image|text)"))
+@app.on_callback_query(filters.regex(r"watermark_text"))
 async def watermark_type(client, callback_query):
-    watermark_type = callback_query.data.split("_")[1]
+    watermark_type = text
     user_id = callback_query.from_user.id
     users.update_one({"user_id": user_id}, {"$set": {"watermark.type": watermark_type}})
-    await callback_query.message.reply_text(
+    watermark_text= await ask(client,user_id,
         f"Send your {watermark_type} watermark content (text or image)."
     )
+    await users.update_one({"user_id": user_id}, {"$set": {"watermark.content": watermark_text}})
+    
 
 # More Handlers for Video Upload and Processing Would Go Here
 
