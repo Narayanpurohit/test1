@@ -154,7 +154,7 @@ async def set_watermark_command(client, message):
     ])
     await message.reply_text("Choose watermark type:", reply_markup=keyboard)
 
-@app.on_callback_query(filters.regex(r"watermark_text"))
+@app.on_callback_query("watermark_text"))
 async def watermark_type(client, callback_query):
     watermark_type = "text"
     user_id = callback_query.from_user.id
