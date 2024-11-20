@@ -89,7 +89,7 @@ async def get_user_watermark(user_id):
 async def start_command(client, message):
     user_id = message.from_user.id
     name = message.from_user.first_name
-    initialize_user(user_id, name)
+    await initialize_user(user_id, name)
     await message.reply_text(
         f"Welcome {name}!\n"
         "I'm your video processing bot.\n\n"
