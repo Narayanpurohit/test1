@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # Replace these with your actual values
 API_ID = 15191874 # Get from https://my.telegram.org
-API_HASH = "YOUR_API_HASH"  # Get from https://my.telegram.org
+API_HASH = "3037d39233c6fad9b80d83bb8a339a07"  # Get from https://my.telegram.org
 BOT_TOKEN = "6941908449:AAEYa6mME5Y90P9hb0zeu85yuF0if3s0YR8"  # Get from BotFather
 
 # Initialize the Pyrogram Client
