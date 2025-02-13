@@ -21,7 +21,7 @@ async def start_command(client: Client, message: Message):
     await message.reply_text("Welcome! Send me a Terabox link, and I'll download the file for you.")
 
 # Handle Terabox Links
-@app.on_message(filters.text & ~filters.command)
+@app.on_message(filters.text & filters.command)
 async def handle_terabox_link(client: Client, message: Message):
     user_message = message.text
     if "terabox.com" in user_message:
