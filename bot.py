@@ -64,6 +64,7 @@ async def download_terabox_file(url: str) -> str:
                     # Extract file name from URL or assign default name
                     parsed_url = urlparse(url)
                     filename = os.path.basename(parsed_url.path) or "downloaded_file"
+                    filename= f"{filename}.mp4"
 
                     file_path = os.path.join(DOWNLOAD_DIR, filename)
 
