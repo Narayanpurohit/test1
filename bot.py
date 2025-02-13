@@ -1,31 +1,64 @@
+import logging
 from pyrogram import Client, filters
-import os
+from pyrogram.types import Message
+import requests
 
-# Your API credentials
-API_ID = 20672791  # Replace with your API ID
-API_HASH = "4ad574250a28647258b597c01cbd8028"  # Replace with your API Hash
-SAVE_CHAT_ID = "me"  # Change to your private channel ID if needed
+# Enable logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Start the Userbot
-app = Client("userbot", api_id=API_ID, api_hash=API_HASH)
+# Replace these with your actual values
+API_ID = 15191874 # Get from https://my.telegram.org
+API_HASH = "YOUR_API_HASH"  # Get from https://my.telegram.org
+BOT_TOKEN = "6941908449:AAEYa6mME5Y90P9hb0zeu85yuF0if3s0YR8"  # Get from BotFather
 
-# Function to save restricted content
-@app.on_message(filters.bot & filters.media)
-def save_restricted(client, message):
-    # Create a downloads folder if not exists
-    if not os.path.exists("downloads"):
-        os.makedirs("downloads")
+# Initialize the Pyrogram Client
+app = Client("terabox_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-    # Download media
-    file_path = message.download(file_name=f"downloads/{message.id}")
-    print(f"Downloaded: {file_path}")
+# Start Command
+@app.on_message(filters.command("start"))
+async def start_command(client: Client, message: Message):
+    await message.reply_text("Welcome! Send me a Terabox link, and I'll download the file for you.")
 
-    # Send to Saved Messages or Private Channel
-    client.send_document(SAVE_CHAT_ID, file_path, caption="Saved from restricted bot")
+# Handle Terabox Links
+@app.on_message(filters.text & ~filters.command)
+async def handle_terabox_link(client: Client, message: Message):
+    user_message = message.text
+    if "terabox.com" in user_message:
+        try:
+            # Placeholder function to download the file from Terabox
+            file_path = download_terabox_file(user_message)
+            
+            if file_path:
+                await message.reply_text("Downloading your file...")
+                await message.reply_document(document=file_path)
+            else:
+                await message.reply_text("Sorry, I couldn't download the file.")
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            await message.reply_text("An error occurred while processing your request.")
+    else:
+        await message.reply_text("Please send a valid Terabox link.")
 
-@app.on_message(filters.bot & filters.text)
-def save_text(client, message):
-    client.send_message(SAVE_CHAT_ID, f"📩 **Restricted Message Saved:**\n\n{message.text}")
+# Placeholder function to download the file from Terabox
+def download_terabox_file(url: str) -> str:
+    try:
+        # Replace this with your logic to download the file from Terabox
+        # For example, using requests to download the file
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            file_name = "downloaded_file.mp4"  # Replace with the actual file name
+            with open(file_name, "wb") as file:
+                for chunk in response.iter_content(chunk_size=1024):
+                    file.write(chunk)
+            return file_name
+        else:
+            return None
+    except Exception as e:
+        logger.error(f"Error downloading file: {e}")
+        return None
 
-print("Userbot is running...")
-app.run()
+# Run the bot
+if __name__ == "__main__":
+    logger.info("Starting the bot...")
+    app.run()
