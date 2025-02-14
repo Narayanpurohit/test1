@@ -8,11 +8,7 @@ session_string = "BAGZqnkAfBQpLUqWCLx93byHawqWJqKIlf4ONmmC6ZGcAD_40hfxCmhacQvehg
 
 group_id = -1002221607316  # Replace with your target group ID
 
-# Replace with your actual credentials
-api_id = 123456  
-api_hash = "your_api_hash"  
-session_string = 
-# Messages to send in order
+
 messages = [
     "Ddart",
     "Ffootball",
