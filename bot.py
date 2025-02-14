@@ -35,7 +35,7 @@ async def send_messages():
                 print(f"⏳ FloodWait detected! Sleeping for {e.value} seconds...")
                 await asyncio.sleep(e.value)
             except Exception as e:
-                print(f"❌ Error sending message: {e}")
+                print(f"Error sending message: {e}")
 
             await asyncio.sleep(160)  # Wait 160 seconds before sending the next message
 
