@@ -1,6 +1,6 @@
 import asyncio
-from pyrogram import Client, errors
-
+import os
+from pyrogram import Client, errors, filters
 
 api_id = 26847865  
 api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"  
