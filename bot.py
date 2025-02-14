@@ -66,7 +66,13 @@ async def download_and_upload(client, message):
 async def main():
     try:
         async with app:
-            await asyncio.gather(send_messages(), app.run())
+            print("Userbot started successfully!")
+
+            # Start sending messages in the background
+            asyncio.create_task(send_messages())
+
+            # Keep the bot running
+            await idle()
     except Exception as e:
         print(f"Unexpected Error: {e}")
 
