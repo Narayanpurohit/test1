@@ -14,8 +14,10 @@ session_string = "BAGZqnkAfBQpLUqWCLx93byHawqWJqKIlf4ONmmC6ZGcAD_40hfxCmhacQvehg
 
 group_id = -1002221607316  # Replace with your target group ID
 message_text = "ddart"  
-message_text = "ddart"
-message_text = "ddart"
+message_text2 = "ffootball"
+message_text3 = "bbasket"
+message_text4 = "sslot"
+
 
 app = Client("my_userbot", api_id, api_hash, session_string=session_string)
 
@@ -23,7 +25,20 @@ async def send_message():
     while True:
         await app.send_message(group_id, message_text)
         print("Message sent!")
-        await asyncio.sleep(300)  # Wait for 5 minutes (300 seconds)
+        await asyncio.sleep(120)  
+        
+        await app.send_message(group_id, message_text2)
+        print("Message sent!")
+        await asyncio.sleep(120)
+        
+        await app.send_message(group_id, message_text3)
+        print("Message sent!")
+        await asyncio.sleep(120)
+        
+        await app.send_message(group_id, message_text4)
+        print("Message sent!")
+        await asyncio.sleep(400)
+        
 
 async def main():
     async with app:
