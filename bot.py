@@ -17,7 +17,8 @@ messages = [
     "Ddart",
     "Ffootball",
     "Bbasket",
-    "Sslot"
+    "Sslot",
+    "bowling"
 ]
 
 app = Client("my_userbot", api_id, api_hash, session_string=session_string)
@@ -34,7 +35,7 @@ async def send_messages():
             except Exception as e:
                 print(f"Error sending message: {e}")
 
-            await asyncio.sleep(160)  # Wait 160 seconds before sending the next message
+            await asyncio.sleep(170)  # Wait 160 seconds before sending the next message
 
 async def main():
     try:
