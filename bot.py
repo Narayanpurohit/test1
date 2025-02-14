@@ -1,48 +1,47 @@
-
-api_id = 26847865  
-api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"  
-
-group_id = -1002221607316  
-
 import asyncio
-from pyrogram import Client
+from pyrogram import Client, errors
 
-# Replace with your actual credentials
+
 api_id = 26847865  
 api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"  
 session_string = "BAGZqnkAfBQpLUqWCLx93byHawqWJqKIlf4ONmmC6ZGcAD_40hfxCmhacQvehgaOJOU_RWwN2-ipKydjHrdwftMO1S_ezEQk-W155BB3FZnJZ6ztWXARuwgv444xopm-K9p1d6rAlClTX04dLmivzsMMEBeiUWn8WGWr_N5PMCzMrvcStj63ZygaZJhazlSxxHjX5NCWkeMFXtrMHOKa8UwTzVAInBMSk2Ud_yPhMnLNBzqc4Yrspt64MemA1IntuEBk08nBFw1OVXze0kaIHQTmugKt6l5po6LE0J1Rqfsm9SNy03NT6-wgWeIXOhhxCRmdnQEDSJJ0H8XOcTSK9k6kforRnwAAAAGUqifiAA"  
 
 group_id = -1002221607316  # Replace with your target group ID
-message_text = "ddart"  
-message_text2 = "ffootball"
-message_text3 = "bbasket"
-message_text4 = "sslot"
 
+# Replace with your actual credentials
+api_id = 123456  
+api_hash = "your_api_hash"  
+session_string = 
+# Messages to send in order
+messages = [
+    "Ddart",
+    "Ffootball",
+    "Bbasket",
+    "Sslot"
+]
 
 app = Client("my_userbot", api_id, api_hash, session_string=session_string)
 
-async def send_message():
+async def send_messages():
     while True:
-        await app.send_message(group_id, message_text)
-        print("Message sent!")
-        await asyncio.sleep(120)  
-        
-        await app.send_message(group_id, message_text2)
-        print("Message sent!")
-        await asyncio.sleep(120)
-        
-        await app.send_message(group_id, message_text3)
-        print("Message sent!")
-        await asyncio.sleep(120)
-        
-        await app.send_message(group_id, message_text4)
-        print("Message sent!")
-        await asyncio.sleep(400)
-        
+        for message in messages:
+            try:
+                await app.send_message(group_id, message)
+                print(f"Sent: {message}")
+            except errors.FloodWait as e:
+                print(f"FloodWait detected! Sleeping for {e.value} seconds...")
+                await asyncio.sleep(e.value)  # Wait for the required time
+            except Exception as e:
+                print(f"Error sending message: {e}")
+
+            await asyncio.sleep(160)  # Wait 160 seconds before sending the next message
 
 async def main():
-    async with app:
-        await send_message()
+    try:
+        async with app:
+            await send_messages()
+    except Exception as e:
+        print(f"Unexpected Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
