@@ -1,10 +1,10 @@
 
-api_id = 26847865
-api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"
-bot_token = "6941908449:AAHNGisGgioOKPDWj5dLQGeB6NOFuMtUs_M"
-wp_url = "https://jnmovies.site"
-wp_username = "bot"
-wp_password = "6wQn rEDj lngb XrcK CbsW No2L"
+#api_id = 26847865
+#api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"
+#bot_token = "6941908449:AAHNGisGgioOKPDWj5dLQGeB6NOFuMtUs_M"
+#wp_url = "https://jnmovies.site"
+#wp_username = "bot"
+#wp_password = "6wQn rEDj lngb XrcK CbsW No2L"
 import os
 import requests
 from pyrogram import Client, filters
