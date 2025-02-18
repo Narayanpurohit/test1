@@ -74,12 +74,12 @@ def scrape_imdb_data(movie_id):
 
 # Handle /start command
 @app.on_message(filters.command("start"))
-def start(client, message):
-    message.reply_text("Send me an IMDb movie link!")
+async def start(client, message):
+    await message.reply_text("Send me an IMDb movie link!")
 
 # Handle IMDb link
-@app.on_message(filters.text )
-def handle_imdb_link(client, message):
+@app.on_message(filters.text & ~filters.command)
+async def handle_imdb_link(client, message):
     try:
         # Extract IMDb ID from the link
         imdb_id = message.text.split("/title/")[1].split("/")[0]
@@ -104,13 +104,13 @@ def handle_imdb_link(client, message):
             
             # Create WordPress post
             if create_wordpress_post(movie_data["title"], post_content, poster_id):
-                message.reply_text(f"Post created for {movie_data['title']}!")
+                await message.reply_text(f"Post created for {movie_data['title']}!")
             else:
-                message.reply_text("Failed to create WordPress post.")
+                await message.reply_text("Failed to create WordPress post.")
         else:
-            message.reply_text("Failed to upload the poster to WordPress.")
+            await message.reply_text("Failed to upload the poster to WordPress.")
     except Exception as e:
-        message.reply_text(f"Error: {str(e)}")
+        await message.reply_text(f"Error: {str(e)}")
 
 # Run the bot
 app.run()
