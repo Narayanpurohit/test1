@@ -1,2 +1,4 @@
 pyrogram
 requests
+beautifulsoup4 
+wordpress_xmlrpc
