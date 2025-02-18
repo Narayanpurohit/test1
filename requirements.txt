@@ -1,4 +1,4 @@
-pyrogram
-requests
-beautifulsoup4 
-wordpress_xmlrpc
+pyrogram 
+imdbpy 
+requests 
+wordpress-api
