@@ -2,7 +2,7 @@
 
 import requests
 from pyrogram import Client, filters
-from bs4 import BeautifulSoup
+from imdb import IMDb
 from wordpress_xmlrpc import Client as WPClient
 from wordpress_xmlrpc.methods import media, posts
 from wordpress_xmlrpc.compat import xmlrpc_client
@@ -18,24 +18,29 @@ wp_password = "6wQn rEDj lngb XrcK CbsW No2L"
 # Initialize the bot
 app = Client("imdb_scraper_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
+# Initialize IMDbPY
+ia = IMDb()
+
 # Initialize WordPress client
 wp_client = WPClient(wp_url + "/xmlrpc.php", wp_username, wp_password)
 
 def scrape_imdb(imdb_url):
-    response = requests.get(imdb_url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Extract data from IMDb
-    title = soup.find("h1").text.strip()
-    poster_url = soup.find("div", class_="poster").find("img")["src"]
-    rating = soup.find("span", itemprop="ratingValue").text.strip()
-    genre = [genre.text.strip() for genre in soup.find_all("span", class_="sc-16ede4f7-2")]
-
-    storyline = soup.find("span", data-testid="plot-xl").text.strip()
-    director = soup.find("a", {"href": lambda x: x and x.startswith("/name")}).text.strip()
-    writer = [writer.text.strip() for writer in soup.find_all("a", {"href": lambda x: x and x.startswith("/name")})]
-    cast = [actor.text.strip() for actor in soup.find_all("a", {"href": lambda x: x and x.startswith("/name")})]
-
+    # Get IMDb movie ID from the URL
+    imdb_id = imdb_url.split("/")[-2]
+    
+    # Fetch movie details using IMDbPY
+    movie = ia.get_movie(imdb_id)
+    
+    # Extract required data
+    title = movie["title"]
+    poster_url = movie["full-size cover url"]
+    rating = movie.get("rating", "N/A")
+    genre = movie.get("genres", [])
+    storyline = movie.get("plot", ["N/A"])[0]
+    director = ", ".join([director["name"] for director in movie.get("directors", [])])
+    writer = ", ".join([writer["name"] for writer in movie.get("writers", [])])
+    cast = ", ".join([actor["name"] for actor in movie.get("cast", [])])
+    
     return {
         "title": title,
         "poster_url": poster_url,
@@ -87,8 +92,8 @@ async def handle_image(client, message):
     <p><strong>Genre:</strong> {', '.join(imdb_data["genre"])}</p>
     <p><strong>Storyline:</strong> {imdb_data["storyline"]}</p>
     <p><strong>Director:</strong> {imdb_data["director"]}</p>
-    <p><strong>Writer:</strong> {', '.join(imdb_data["writer"])}</p>
-    <p><strong>Cast:</strong> {', '.join(imdb_data["cast"])}</p>
+    <p><strong>Writer:</strong> {imdb_data["writer"]}</p>
+    <p><strong>Cast:</strong> {imdb_data["cast"]}</p>
     """
     post.thumbnail = poster_id
     post.post_status = "publish"
