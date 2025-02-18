@@ -1,73 +1,101 @@
-session_string = "BAGZqnkAfBQpLUqWCLx93byHawqWJqKIlf4ONmmC6ZGcAD_40hfxCmhacQvehgaOJOU_RWwN2-ipKydjHrdwftMO1S_ezEQk-W155BB3FZnJZ6ztWXARuwgv444xopm-K9p1d6rAlClTX04dLmivzsMMEBeiUWn8WGWr_N5PMCzMrvcStj63ZygaZJhazlSxxHjX5NCWkeMFXtrMHOKa8UwTzVAInBMSk2Ud_yPhMnLNBzqc4Yrspt64MemA1IntuEBk08nBFw1OVXze0kaIHQTmugKt6l5po6LE0J1Rqfsm9SNy03NT6-wgWeIXOhhxCRmdnQEDSJJ0H8XOcTSK9k6kforRnwAAAAGUqifiAA"  
-import asyncio
-import os
-from pyrogram import Client, errors, filters, idle
-
-api_id = 26847865  
-api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"  
 
 
-group_id = -1002221607316  # Replace with your target group ID
-forward_to = "me"  # Upload videos to Saved Messages
+import requests
+from pyrogram import Client, filters
+from bs4 import BeautifulSoup
+from wordpress_xmlrpc import Client as WPClient
+from wordpress_xmlrpc.methods import media, posts
+from wordpress_xmlrpc.compat import xmlrpc_client
 
-# Bot usernames to monitor
-source_bots = ["Nagrufilesbot", "Fastvideoeditorbot"]
+# Define your bot API credentials and WordPress API credentials
+api_id = 26847865
+api_hash = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"
+bot_token = "6941908449:AAHNGisGgioOKPDWj5dLQGeB6NOFuMtUs_M"
+wp_url = "https://jnmovies.site"
+wp_username = "bot"
+wp_password = "6wQn rEDj lngb XrcK CbsW No2L"
 
-# Messages to send in order
-messages = [
-    "Ddart",
-    "Ffootball",
-    "Bbasket",
-    "Sslot",
-    "Bowling"
-]
+# Initialize the bot
+app = Client("imdb_scraper_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
-app = Client("my_userbot", api_id, api_hash, session_string=session_string)
+# Initialize WordPress client
+wp_client = WPClient(wp_url + "/xmlrpc.php", wp_username, wp_password)
 
-async def send_messages():
-    """ Sends scheduled messages to the group every 160 seconds """
-    while True:
-        for message in messages:
-            try:
-                await app.send_message(group_id, message)
-                print(f"✅ Sent: {message}")
-            except errors.FloodWait as e:
-                print(f"⏳ FloodWait detected! Sleeping for {e.value} seconds...")
-                await asyncio.sleep(e.value)
-            except Exception as e:
-                print(f"Error sending message: {e}")
+def scrape_imdb(imdb_url):
+    response = requests.get(imdb_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-            await asyncio.sleep(160)  # Wait 160 seconds before sending the next message
+    # Extract data from IMDb
+    title = soup.find("h1").text.strip()
+    poster_url = soup.find("div", class_="poster").find("img")["src"]
+    rating = soup.find("span", itemprop="ratingValue").text.strip()
+    genre = [genre.text.strip() for genre in soup.find_all("span", class_="sc-16ede4f7-2")]
 
-@app.on_message(filters.chat(source_bots) & filters.video)
-async def download_and_upload(client, message):
-    """ Downloads the video from bot messages & re-uploads to Saved Messages """
-    try:
-        download_path = await message.download()
-        print(f"📥 Downloaded video: {download_path}")
+    storyline = soup.find("span", data-testid="plot-xl").text.strip()
+    director = soup.find("a", {"href": lambda x: x and x.startswith("/name")}).text.strip()
+    writer = [writer.text.strip() for writer in soup.find_all("a", {"href": lambda x: x and x.startswith("/name")})]
+    cast = [actor.text.strip() for actor in soup.find_all("a", {"href": lambda x: x and x.startswith("/name")})]
 
-        # Upload to Saved Messages
-        await app.send_video(forward_to, video=download_path, caption="Re-uploaded Video")
-        print("📤 Uploaded video to Saved Messages.")
+    return {
+        "title": title,
+        "poster_url": poster_url,
+        "rating": rating,
+        "genre": genre,
+        "storyline": storyline,
+        "director": director,
+        "writer": writer,
+        "cast": cast
+    }
 
-        # Remove the file after uploading
-        os.remove(download_path)
-        print("🗑️ Deleted downloaded video from VPS.")
+def upload_image_to_wp(image_url):
+    # Download the image
+    img_data = requests.get(image_url).content
+    file_name = image_url.split("/")[-1]
 
-    except errors.FloodWait as e:
-        print(f"⏳ FloodWait while uploading! Sleeping for {e.value} seconds...")
-        await asyncio.sleep(e.value)
-    except Exception as e:
-        print(f"❌ Error handling video: {e}")
+    # Prepare the image for WordPress media upload
+    data = {
+        "name": file_name,
+        "type": "image/jpeg",
+        "bits": xmlrpc_client.Binary(img_data)
+    }
 
-async def main():
-    print("🚀 Userbot started successfully!")
+    # Upload image to WordPress
+    response = wp_client.call(media.UploadFile(data))
+    return response["id"], response["url"]
 
-    # Start sending messages in the background
-    asyncio.create_task(send_messages())
+@app.on_message(filters.photo)
+async def handle_image(client, message):
+    # Send a message to ask for the IMDb URL
+    await message.reply("Please provide the IMDb link for the movie:")
 
-    # Keep the bot running
-    await idle()
+    # Wait for the user's response
+    response = await client.listen(message.chat.id)
+    imdb_url = response.text.strip()
 
-if __name__ == "__main__":
-    app.run(main())  # ✅ Runs everything inside Pyrogram’s event loop (No conflicts)
+    # Scrape IMDb details
+    imdb_data = scrape_imdb(imdb_url)
+
+    # Upload movie poster to WordPress
+    poster_id, poster_url = upload_image_to_wp(imdb_data["poster_url"])
+
+    # Create a new post in WordPress
+    post = posts.NewPost()
+    post.title = imdb_data["title"]
+    post.content = f"""
+    <h2>{imdb_data["title"]}</h2>
+    <p><strong>Rating:</strong> {imdb_data["rating"]}</p>
+    <p><strong>Genre:</strong> {', '.join(imdb_data["genre"])}</p>
+    <p><strong>Storyline:</strong> {imdb_data["storyline"]}</p>
+    <p><strong>Director:</strong> {imdb_data["director"]}</p>
+    <p><strong>Writer:</strong> {', '.join(imdb_data["writer"])}</p>
+    <p><strong>Cast:</strong> {', '.join(imdb_data["cast"])}</p>
+    """
+    post.thumbnail = poster_id
+    post.post_status = "publish"
+
+    # Upload the post
+    wp_client.call(posts.NewPost(post))
+
+    await message.reply("Post has been published to WordPress with the movie details!")
+
+app.run()
