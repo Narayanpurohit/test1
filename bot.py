@@ -78,7 +78,7 @@ async def start(client, message):
     await message.reply_text("Send me an IMDb movie link!")
 
 # Handle IMDb link
-@app.on_message(filters.text & ~filters.command)
+@app.on_message(filters.text )
 async def handle_imdb_link(client, message):
     try:
         # Extract IMDb ID from the link
