@@ -96,6 +96,10 @@ async def handle_imdb_link(client, message):
         await message.reply_text("🔗 Send the **Download Links** in this format:\n"
                              "`Resolution | Size | Download Link | Stream Link`\n"
                              "You can send multiple lines.")
+                            
+                            
+        download_response = (await client.listen(message.chat.id)).text.strip()
+        
         download_links = (await client.listen(message.chat.id)).text.strip().split("\n")
         download_links = download_response.split("\n")
         download_html = ""
