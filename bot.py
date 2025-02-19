@@ -90,11 +90,41 @@ async def handle_imdb_link(client, message):
             await message.reply_text("⚠️ Invalid IMDb link!")
             return
         
+        await message.reply_text("🎧 Send me the **audios Languages** (e.g., Hindi, English, Tamil):")
+        audios = (await client.listen(message.chat.id)).text.strip()
+        
+        await message.reply_text("🔗 Send the **Download Links** in this format:\n"
+                             "`Resolution | Size | Download Link | Stream Link`\n"
+                             "You can send multiple lines.")
+        download_links = (await client.listen(message.chat.id)).text.strip().split("\n")
+        download_links = download_response.split("\n")
+        download_html = ""
+        quality=""
+        for line in download_links:
+            parts = line.split("|")
+            if len(parts) == 3:
+                resolution, size, dl_link = map(str.strip, parts)
+                quality+=f"{resolution}/"
+                download_html += (
+                    f'<h6 style="text-align: center;"><strong>'
+                    f'<span style="color: #fff;">{title} ({year}) {audios} {resolution} {quality} [{size}]</span></strong></h6>\n'
+                    f'<p style="text-align: center;">'
+                    f'<a href="{dl_link}" target="_blank"><button>Download</button></a>\n'
+                    f'<a href="{stream_link}" target="_blank"><button>Stream</button></a></p>\n'
+                )
+                
+                
+    
+    
+    
+
+        
         # Scrape IMDb data
         movie_data = scrape_imdb_data(imdb_id)
         
         # Upload poster to WordPress
         poster_id = upload_image_to_wordpress(movie_data["poster"])
+        print(file_name)
         
         if poster_id:
             # Prepare post content
