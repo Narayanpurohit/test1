@@ -120,6 +120,8 @@ async def handle_imdb_link(client, message):
 
         
         # Scrape IMDb data
+        print(quality)
+        
         movie_data = scrape_imdb_data(imdb_id)
         
         # Upload poster to WordPress
@@ -137,6 +139,7 @@ async def handle_imdb_link(client, message):
             <strong>Cast:</strong> {movie_data["cast"]}<br>
             <strong>Plot:</strong> {movie_data["plot"]}
             """
+            post_content+=download_html
             
             # Create WordPress post
             if create_wordpress_post(movie_data["title"], post_content, poster_id):
