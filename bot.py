@@ -1,7 +1,7 @@
 import os
 import requests
 from pyrogram import Client, filters
-from imdb import Cinemagoer()
+from imdb import Cinemagoer
 
 # Telegram Bot Credentials
 API_ID = 26847865
