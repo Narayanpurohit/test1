@@ -65,9 +65,9 @@ def scrape_imdb_data(movie_id):
         "title": movie.get("title"),
         "rating": movie.get("rating"),
         "genres": ", ".join(movie.get("genres", [])),
-        "director": ", ".join([d["name"] for d in movie.get("directors", [])]),
-        "writer": ", ".join([w["name"] for w in movie.get("writers", [])]),
-        "cast": ", ".join([c["name"] for c in movie.get("cast", [])][:5]),  # Top 5 cast
+        "director": ", ".join([str(director) for director in movie.get('director', [])[:3]]) or "N/A",
+        "writer": ", ".join([str(writer) for writer in movie.get('writer', [])[:3]]) or "N/A",
+        "cast": ", ".join([str(cast) for cast in movie.get('cast', [])[:5]]) or "N/A",  # Top 5 cast
         "plot": movie.get("plot outline"),
         "poster": movie.get("full-size cover url"),
     }
