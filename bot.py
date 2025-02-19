@@ -1,7 +1,7 @@
 import os
 import requests
 from pyrogram import Client, filters
-from imdb import IMDb
+from imdb import Cinemagoer()
 
 # Telegram Bot Credentials
 API_ID = 26847865
@@ -17,7 +17,7 @@ WP_PASSWORD = "6wQn rEDj lngb XrcK CbsW No2L"
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # Initialize IMDbPY
-ia = IMDb()
+ia = Cinemagoer()
 
 # Function to upload image to WordPress media library
 def upload_image_to_wordpress(image_url):
@@ -81,8 +81,13 @@ async def start(client, message):
 @app.on_message(filters.text )
 async def handle_imdb_link(client, message):
     try:
-        # Extract IMDb ID from the link
-        imdb_id = message.text.split("/title/")[1].split("/")[0]
+        
+        imdb_url=message.text
+        imdb_id_match = re.search(r'tt(\d+)', imdb_url)
+        imdb_id = imdb_id_match.group(1) if imdb_id_match else None
+        if not imdb_id:
+            await message.reply_text("⚠️ Invalid IMDb link!")
+            return
         
         # Scrape IMDb data
         movie_data = scrape_imdb_data(imdb_id)
