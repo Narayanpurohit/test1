@@ -115,10 +115,11 @@ async def handle_imdb_link(client, message):
                 return
             
             # Generate HTML for screenshots
-            screenshots_html = '<div class="neoimgs"><div class="screenshots"><ul class="neoscr">\n'
+            screenshots_html=""
+            #screenshots_html = '<div class="neoimgs"><div class="screenshots"><ul class="neoscr">\n'
             for link in screenshots:
                 screenshots_html += f'<li class="neoss"><img src="{link}" /></li>\n'
-            screenshots_html += '</ul></div></div>'
+            #screenshots_html += '</ul></div></div>'
             
             # Ask for download links
             await message.reply_text("📥 Send me the download links in the format:\n`Resolution | Download Link`")
@@ -138,6 +139,7 @@ async def handle_imdb_link(client, message):
             
             # Prepare post content
             post_content = f"""
+             <br><img src="{movie_data["poster"]}" alt="{movie_data["title"]} Poster">
             <strong>Title:</strong> {movie_data["title"]}<br>
             <strong>Rating:</strong> {movie_data["rating"]}<br>
             <strong>Genres:</strong> {movie_data["genres"]}<br>
@@ -148,7 +150,7 @@ async def handle_imdb_link(client, message):
             <strong>Audio Language:</strong> {audio_language}<br>
             {screenshots_html}
             {download_html}
-            <br><img src="{movie_data["poster"]}" alt="{movie_data["title"]} Poster">
+           
             """
             
             # Create WordPress post
