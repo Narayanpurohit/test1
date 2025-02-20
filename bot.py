@@ -105,6 +105,21 @@ async def handle_imdb_link(client, message):
             await message.reply_text("🎙️ What is the audio language of the movie?")
             audio_language = (await client.listen(message.chat.id)).text.strip()
             
+            # Ask for screenshot links
+            await message.reply_text("📸 Now send me the screenshot links (each on a new line):")
+            screenshots_response = (await client.listen(message.chat.id)).text.strip()
+            screenshots = screenshots_response.split("\n")
+            
+            if len(screenshots) < 2:
+                await message.reply_text("⚠️ Please send at least two screenshot links.")
+                return
+            
+            # Generate HTML for screenshots
+            screenshots_html = '<div class="neoimgs"><div class="screenshots"><ul class="neoscr">\n'
+            for link in screenshots:
+                screenshots_html += f'<li class="neoss"><img src="{link}" /></li>\n'
+            screenshots_html += '</ul></div></div>'
+            
             # Ask for download links
             await message.reply_text("📥 Send me the download links in the format:\n`Resolution | Download Link`")
             download_response = (await client.listen(message.chat.id)).text.strip()
@@ -131,6 +146,7 @@ async def handle_imdb_link(client, message):
             <strong>Cast:</strong> {movie_data["cast"]}<br>
             <strong>Plot:</strong> {movie_data["plot"]}<br>
             <strong>Audio Language:</strong> {audio_language}<br>
+            {screenshots_html}
             {download_html}
             <br><img src="{movie_data["poster"]}" alt="{movie_data["title"]} Poster">
             """
