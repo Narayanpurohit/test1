@@ -1,8 +1,12 @@
 import os
 import re
 import requests
+import logging
 from pyrogram import Client, filters
 from imdb import Cinemagoer
+
+# Logging setup
+logging.basicConfig(level=logging.INFO)
 
 # Telegram Bot Credentials
 API_ID = 26847865
@@ -79,31 +83,44 @@ async def start(client, message):
     await message.reply_text("Send me an IMDb movie link!")
 
 # Handle IMDb link
-@app.on_message(filters.text )
+@app.on_message(filters.text)
 async def handle_imdb_link(client, message):
     try:
-        
-        imdb_url=message.text
-        imdb_id_match = re.search(r'tt(\d+)', imdb_url)
+        imdb_url = message.text
+        imdb_id_match = re.search(r'imdb\.com/title/tt(\d+)', imdb_url)
         imdb_id = imdb_id_match.group(1) if imdb_id_match else None
+        
         if not imdb_id:
             await message.reply_text("⚠️ Invalid IMDb link!")
             return
         
-        
-    
-    
-    
-
-        
-        
+        # Scrape IMDb data
         movie_data = scrape_imdb_data(imdb_id)
         
         # Upload poster to WordPress
         poster_id = upload_image_to_wordpress(movie_data["poster"])
-        print(file_name)
         
         if poster_id:
+            # Ask for audio language
+            await message.reply_text("🎙️ What is the audio language of the movie?")
+            audio_language = (await client.listen(message.chat.id)).text.strip()
+            
+            # Ask for download links
+            await message.reply_text("📥 Send me the download links in the format:\n`Resolution | Download Link`")
+            download_response = (await client.listen(message.chat.id)).text.strip()
+            download_links = download_response.split("\n")
+            
+            # Prepare download links HTML
+            download_html = "<br><strong>Download Links:</strong><br>"
+            for line in download_links:
+                parts = line.split("|")
+                if len(parts) == 2:
+                    resolution, dl_link = map(str.strip, parts)
+                    download_html += (
+                        f'<p style="text-align: center;">'
+                        f'<a href="{dl_link}" target="_blank"><button>{resolution}</button></a></p>\n'
+                    )
+            
             # Prepare post content
             post_content = f"""
             <strong>Title:</strong> {movie_data["title"]}<br>
@@ -112,19 +129,21 @@ async def handle_imdb_link(client, message):
             <strong>Director:</strong> {movie_data["director"]}<br>
             <strong>Writer:</strong> {movie_data["writer"]}<br>
             <strong>Cast:</strong> {movie_data["cast"]}<br>
-            <strong>Plot:</strong> {movie_data["plot"]}
+            <strong>Plot:</strong> {movie_data["plot"]}<br>
+            <strong>Audio Language:</strong> {audio_language}<br>
+            {download_html}
+            <br><img src="{movie_data["poster"]}" alt="{movie_data["title"]} Poster">
             """
-            post_content+=download_html
             
             # Create WordPress post
             if create_wordpress_post(movie_data["title"], post_content, poster_id):
-                await message.reply_text(f"Post created for {movie_data['title']}!")
+                await message.reply_text(f"✅ Post created for {movie_data['title']}!")
             else:
-                await message.reply_text("Failed to create WordPress post.")
+                await message.reply_text("❌ Failed to create WordPress post.")
         else:
-            await message.reply_text("Failed to upload the poster to WordPress.")
+            await message.reply_text("❌ Failed to upload the poster to WordPress.")
     except Exception as e:
-        await message.reply_text(f"Error: {str(e)}")
+        await message.reply_text(f"⚠️ Error: {str(e)}")
 
 # Run the bot
 app.run()
