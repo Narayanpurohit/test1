@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import UserNotParticipant, PeerIdInvalid, ChatAdminRequired
+from pyrogram.enums import ChatMemberStatus
 import asyncio
 
 API_ID = 26847865
@@ -8,7 +9,7 @@ API_HASH = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"
 BOT_TOKEN = "6757393088:AAFa9YEslZ5cKZecTnG0wf_txnRC3q_xj60"
 
 # Channel info
-REQUIRED_CHANNEL_ID = -1002649752447  # Replace with your channel's ID
+REQUIRED_CHANNEL_ID = -1002649752447  # Replace with your channel ID
 REDIRECT_BOT = "DriveOO1bot"
 
 app = Client("redirect_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -22,23 +23,39 @@ async def start_handler(client, message):
         await message.reply_text("Welcome! Please use a valid start link.")
         return
 
-    print(f"User {user_id} started bot with payload: {payload}")
+    print(f"[DEBUG] User {user_id} started bot with payload: {payload}")
 
     # Check if user is in the required channel
     try:
         member = await client.get_chat_member(REQUIRED_CHANNEL_ID, user_id)
         print(f"[DEBUG] User {user_id} status in channel: {member.status}")
 
-        if member.status not in ("member", "administrator", "creator"):
-            print(f"[DEBUG] User {user_id} is NOT a member")
+        if member.status not in (
+            ChatMemberStatus.MEMBER,
+            ChatMemberStatus.ADMINISTRATOR,
+            ChatMemberStatus.OWNER
+        ):
+            print(f"[DEBUG] User {user_id} is NOT a valid member")
             raise UserNotParticipant
+        else:
+            print(f"[DEBUG] User {user_id} IS a valid member")
+
     except UserNotParticipant:
         print(f"[DEBUG] UserNotParticipant triggered for user {user_id}")
         invite = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
         invite_link = invite.invite_link
         try_again_link = f"https://t.me/{client.me.username}?start={payload}"
 
-        await message.reply_text("You have to join this channel to use this bot.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Join Channel", url=invite_link),InlineKeyboardButton("Backup Channel", url="https://t.me/+jAgDPZtfjfRhMjM1")],[InlineKeyboardButton("Try Again", url=try_again_link)]]))
+        await message.reply_text(
+            "You have to join this channel to use this bot.",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("Join Channel", url=invite_link),
+                    InlineKeyboardButton("Backup Channel", url="https://t.me/+jAgDPZtfjfRhMjM1")
+                ],
+                [InlineKeyboardButton("Try Again", url=try_again_link)]
+            ])
+        )
         return
     except ChatAdminRequired:
         print(f"[ERROR] Bot is not admin in the channel!")
