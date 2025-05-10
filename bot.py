@@ -32,13 +32,13 @@ async def start_handler(client, message):
         if member.status not in ("member", "administrator", "creator"):
             raise UserNotParticipant
     except UserNotParticipant:
-        join_link = f"https://t.me/{REQUIRED_CHANNEL_USERNAME}"
+        invite_link = await app.create_chat_invite_link(chat_id)
         try_again_link = f"https://t.me/{client.me.username}?start={payload}"
 
         await message.reply_text(
             "You have to join this channel to use this bot.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Join Channel", url=join_link)],
+                [InlineKeyboardButton("Join Channel", url=invite_link)],
                 [InlineKeyboardButton("Try Again", url=try_again_link)]
             ])
         )
