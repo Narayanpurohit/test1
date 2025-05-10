@@ -1,6 +1,3 @@
-
-
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import UserNotParticipant
@@ -11,8 +8,7 @@ API_HASH = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"
 BOT_TOKEN = "6757393088:AAFa9YEslZ5cKZecTnG0wf_txnRC3q_xj60"
 
 # Channel info
-REQUIRED_CHANNEL_ID = -1002649752447  # Replace with your channel ID
-REQUIRED_CHANNEL_USERNAME = "DriveOO1Updates"  # Used only for join link
+REQUIRED_CHANNEL_ID = -1002649752447  # Replace with your channel's ID
 REDIRECT_BOT = "DriveOO1bot"
 
 app = Client("redirect_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -32,7 +28,9 @@ async def start_handler(client, message):
         if member.status not in ("member", "administrator", "creator"):
             raise UserNotParticipant
     except UserNotParticipant:
-        invite_link = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
+        # Generate a new invite link for private channel
+        invite = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
+        invite_link = invite.invite_link
         try_again_link = f"https://t.me/{client.me.username}?start={payload}"
 
         await message.reply_text(
