@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors import UserNotParticipant
+from pyrogram.errors import UserNotParticipant, PeerIdInvalid, ChatAdminRequired
 import asyncio
 
 API_ID = 26847865
@@ -22,13 +22,18 @@ async def start_handler(client, message):
         await message.reply_text("Welcome! Please use a valid start link.")
         return
 
-    # Check if user has joined the required channel (by ID)
+    print(f"User {user_id} started bot with payload: {payload}")
+
+    # Check if user is in the required channel
     try:
         member = await client.get_chat_member(REQUIRED_CHANNEL_ID, user_id)
+        print(f"[DEBUG] User {user_id} status in channel: {member.status}")
+
         if member.status not in ("member", "administrator", "creator"):
+            print(f"[DEBUG] User {user_id} is NOT a member")
             raise UserNotParticipant
     except UserNotParticipant:
-        # Generate a new invite link for private channel
+        print(f"[DEBUG] UserNotParticipant triggered for user {user_id}")
         invite = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
         invite_link = invite.invite_link
         try_again_link = f"https://t.me/{client.me.username}?start={payload}"
@@ -41,8 +46,20 @@ async def start_handler(client, message):
             ])
         )
         return
+    except ChatAdminRequired:
+        print(f"[ERROR] Bot is not admin in the channel!")
+        await message.reply_text("Error: Bot must be admin in the channel to check membership.")
+        return
+    except PeerIdInvalid:
+        print(f"[ERROR] Invalid channel ID: {REQUIRED_CHANNEL_ID}")
+        await message.reply_text("Error: Invalid channel configuration.")
+        return
+    except Exception as e:
+        print(f"[ERROR] Unexpected error while checking membership: {e}")
+        await message.reply_text("Something went wrong while checking your join status.")
+        return
 
-    # User has joined, send redirect link
+    # User is in channel, send redirect link
     target_link = f"https://t.me/{REDIRECT_BOT}?start={payload}"
     sent = await message.reply_text(
         "This message will be deleted in 10 minutes. Use the link before that.",
