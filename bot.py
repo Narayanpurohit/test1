@@ -1,7 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import UserNotParticipant, PeerIdInvalid, ChatAdminRequired
-from pyrogram.enums import ChatMemberStatus
 import asyncio
 
 API_ID = 26847865
@@ -30,27 +29,16 @@ async def start_handler(client, message):
         member = await client.get_chat_member(REQUIRED_CHANNEL_ID, user_id)
         print(f"[DEBUG] User {user_id} status in channel: {member.status}")
 
-        if member.status not in (
-            ChatMemberStatus.MEMBER,
-            ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER
-        ):
-            print(f"[DEBUG] User {user_id} is NOT a valid member")
+        if member.status not in ("member", "administrator", "creator"):
+            print(f"[DEBUG] User {user_id} is NOT a member")
             raise UserNotParticipant
-
     except UserNotParticipant:
         print(f"[DEBUG] UserNotParticipant triggered for user {user_id}")
         invite = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
         invite_link = invite.invite_link
         try_again_link = f"https://t.me/{client.me.username}?start={payload}"
 
-        await message.reply_text(
-            "You have to join this channel to use this bot.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Join Channel", url=invite_link)],
-                [InlineKeyboardButton("Try Again", url=try_again_link)]
-            ])
-        )
+        await message.reply_text("You have to join this channel to use this bot.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Join Channel", url=invite_link),InlineKeyboardButton("Backup Channel", url="https://t.me/+jAgDPZtfjfRhMjM1")],[InlineKeyboardButton("Try Again", url=try_again_link)]]))
         return
     except ChatAdminRequired:
         print(f"[ERROR] Bot is not admin in the channel!")
