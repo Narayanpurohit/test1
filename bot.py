@@ -1,12 +1,5 @@
 
 
-# Initialize your bot
-app = Client(
-    "my_bot",
-    bot_token="",
-    api_id=26847865,
-    api_hash=""
-)
 
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
