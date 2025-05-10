@@ -32,7 +32,7 @@ async def start_handler(client, message):
         if member.status not in ("member", "administrator", "creator"):
             raise UserNotParticipant
     except UserNotParticipant:
-        invite_link = await app.create_chat_invite_link(chat_id)
+        invite_link = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
         try_again_link = f"https://t.me/{client.me.username}?start={payload}"
 
         await message.reply_text(
