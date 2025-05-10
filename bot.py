@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import UserNotParticipant, PeerIdInvalid, ChatAdminRequired
+from pyrogram.enums import ChatMemberStatus
 import asyncio
 
 API_ID = 26847865
@@ -29,9 +30,14 @@ async def start_handler(client, message):
         member = await client.get_chat_member(REQUIRED_CHANNEL_ID, user_id)
         print(f"[DEBUG] User {user_id} status in channel: {member.status}")
 
-        if member.status not in ("member", "administrator", "creator"):
-            print(f"[DEBUG] User {user_id} is NOT a member")
+        if member.status not in (
+            ChatMemberStatus.MEMBER,
+            ChatMemberStatus.ADMINISTRATOR,
+            ChatMemberStatus.OWNER
+        ):
+            print(f"[DEBUG] User {user_id} is NOT a valid member")
             raise UserNotParticipant
+
     except UserNotParticipant:
         print(f"[DEBUG] UserNotParticipant triggered for user {user_id}")
         invite = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
