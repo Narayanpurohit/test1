@@ -3,18 +3,11 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from config import API_ID, API_HASH, BOT_TOKEN, ADMINS
-from userbot import (
-    is_logged_in,
-    login_userbot,
-    complete_login,
-    logout_userbot,
-    get_userbot_groups,
-    broadcast_to_groups
-)
-
-pending_logins = {}
+import userbot
 
 bot = Client("controller-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+login_sessions = {}
 
 def is_admin(user_id):
     return user_id in ADMINS
@@ -22,87 +15,108 @@ def is_admin(user_id):
 @bot.on_message(filters.command("start"))
 async def start(client, message: Message):
     if not is_admin(message.from_user.id):
-        return await message.reply("❌ You're not allowed to use this bot.")
-    await message.reply("🤖 Bot is ready. Use /login to start userbot session.")
+        return await message.reply("❌ You're not authorized.")
+    await message.reply("🤖 Bot is online.\nUse /login to log in and /help for commands.")
 
-# ------------------------- LOGIN -------------------------
+@bot.on_message(filters.command("help"))
+async def help_command(client, message: Message):
+    if not is_admin(message.from_user.id):
+        return
+    await message.reply(
+        "**🤖 Available Commands:**\n"
+        "/login - Start userbot login\n"
+        "/logout - Logout and delete session\n"
+        "/broadcast - Reply to a message to broadcast\n"
+        "/help - Show this help message"
+    )
 
 @bot.on_message(filters.command("login"))
 async def login(client, message: Message):
     if not is_admin(message.from_user.id):
-        return await message.reply("❌ Unauthorized.")
-    if is_logged_in():
-        return await message.reply("✅ Already logged in.")
-    await message.reply("📞 Please send your phone number in format +1234567890")
-    pending_logins[message.from_user.id] = {"step": "phone"}
+        return await message.reply("❌ You're not authorized.")
+    await message.reply("📞 Send your phone number in international format (e.g., `+1234567890`)")
+    login_sessions[message.from_user.id] = {"step": "phone"}
 
 @bot.on_message(filters.command("logout"))
 async def logout(client, message: Message):
     if not is_admin(message.from_user.id):
-        return await message.reply("❌ Unauthorized.")
-    if not is_logged_in():
-        return await message.reply("⚠️ Userbot is not logged in.")
+        return await message.reply("❌ You're not authorized.")
+    if not await userbot.is_logged_in():
+        return await message.reply("⚠️ Not logged in.")
     msg = await message.reply("⏳ Logging out...")
-    result = await logout_userbot()
+    result = await userbot.logout_userbot()
     await msg.edit(result)
 
-@bot.on_message(filters.text & filters.private)
-async def handle_login_steps(client, message: Message):
-    user_id = message.from_user.id
-    if not is_admin(user_id):
-        return
-
-    if user_id not in pending_logins:
-        return
-
-    data = pending_logins[user_id]
-
-    if data["step"] == "phone":
-        data["phone"] = message.text
-        response = await login_userbot(message.text)
-        await message.reply(response)
-        data["step"] = "code"
-
-    elif data["step"] == "code":
-        response = await complete_login(code=message.text)
-        if "2FA" in response:
-            await message.reply(response)
-            data["step"] = "password"
-        else:
-            await message.reply(response)
-            del pending_logins[user_id]
-
-    elif data["step"] == "password":
-        response = await complete_login(code=data.get("code"), password=message.text)
-        await message.reply(response)
-        del pending_logins[user_id]
-
-# ----------------------- BROADCAST -----------------------
-
 @bot.on_message(filters.command("broadcast") & filters.reply)
-async def handle_broadcast(client: Client, message: Message):
+async def broadcast(client, message: Message):
     if not is_admin(message.from_user.id):
-        return await message.reply("❌ Unauthorized.")
+        return
+    if not await userbot.is_logged_in():
+        return await message.reply("⚠️ Please login first using /login.")
 
-    if not is_logged_in():
-        return await message.reply("⚠️ Userbot is not logged in. Use /login first.")
+    await userbot.start_userbot()
 
-    reply_msg = message.reply_to_message
-    status_msg = await message.reply("🔄 Fetching groups...")
-
-    groups = await get_userbot_groups()
+    status = await message.reply("🔍 Fetching groups...")
+    groups = await userbot.get_userbot_groups()
     if not groups:
-        return await status_msg.edit("⚠️ No groups found.")
+        return await status.edit("❌ No groups found.")
 
-    await status_msg.edit(f"📢 Broadcasting to {len(groups)} groups...")
+    await status.edit(f"📢 Broadcasting to {len(groups)} groups...")
 
-    stats = await broadcast_to_groups(reply_msg, groups)
+    stats = await userbot.broadcast_to_groups(message.reply_to_message, groups)
 
-    await status_msg.edit(
+    await status.edit(
         f"✅ Broadcast Complete\n\n"
         f"✔️ Sent: {stats['success']}\n"
         f"❌ Failed: {stats['failed']}\n"
         f"📊 Total: {stats['total']} groups"
     )
+
+@bot.on_message(filters.private & filters.text)
+async def handle_login_steps(client, message: Message):
+    user_id = message.from_user.id
+    if not is_admin(user_id):
+        return
+
+    if user_id not in login_sessions:
+        return
+
+    step_data = login_sessions[user_id]
+    step = step_data["step"]
+
+    if step == "phone":
+        phone = message.text.strip()
+        result = await userbot.login_start(phone)
+        if isinstance(result, str):
+            await message.reply(result)
+            del login_sessions[user_id]
+        else:
+            step_data["client"] = result
+            step_data["step"] = "code"
+            await message.reply("📨 Now send the OTP (with spaces between digits). Example:\n`1 2 3 4 5`")
+
+    elif step == "code":
+        code = message.text.strip()
+        result = await userbot.login_complete_code(step_data["client"], code)
+        if isinstance(result, str):
+            if result == "2FA":
+                step_data["step"] = "password"
+                await message.reply("🔐 Please send your 2FA password.")
+            else:
+                await message.reply(result)
+                del login_sessions[user_id]
+        else:
+            userbot.session_string = await result.export_session_string()
+            with open("session.txt", "w") as f:
+                f.write(userbot.session_string)
+            await result.disconnect()
+            await message.reply("✅ Logged in successfully.")
+            del login_sessions[user_id]
+
+    elif step == "password":
+        password = message.text.strip()
+        result = await userbot.login_password(step_data["client"], password)
+        await message.reply(result)
+        del login_sessions[user_id]
 
 bot.run()
