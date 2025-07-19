@@ -11,32 +11,43 @@ session_file = "session.txt"
 user_client = None
 session_string = None
 
+
 async def is_logged_in():
     return os.path.exists(session_file)
 
+
 async def start_userbot():
-    global user_client
-    if not session_string:
+    global session_string, user_client
+    if not await is_logged_in():
         return False
+    with open(session_file, "r") as f:
+        session_string = f.read().strip()
     user_client = Client("dyn_session", api_id=API_ID, api_hash=API_HASH, session_string=session_string)
     await user_client.start()
     return True
 
-async def login_start(phone: str) -> str:
+
+async def login_start(phone: str):
     temp_client = Client("temp_login", api_id=API_ID, api_hash=API_HASH)
     await temp_client.connect()
     try:
-        await temp_client.send_code(phone)
+        sent = await temp_client.send_code(phone)
         temp_client.phone = phone
+        temp_client.phone_code_hash = sent.phone_code_hash
         return temp_client
     except Exception as e:
         await temp_client.disconnect()
         return f"❌ Failed to send code: {e}"
 
-async def login_complete_code(client: Client, code: str) -> str:
+
+async def login_complete_code(client: Client, code: str):
     try:
         code = code.replace(" ", "")
-        await client.sign_in(phone_number=client.phone, phone_code=code)
+        await client.sign_in(
+            phone_number=client.phone,
+            phone_code_hash=client.phone_code_hash,
+            phone_code=code
+        )
         return client
     except SessionPasswordNeeded:
         return "2FA"
@@ -45,7 +56,8 @@ async def login_complete_code(client: Client, code: str) -> str:
     except Exception as e:
         return f"❌ Login failed: {e}"
 
-async def login_password(client: Client, password: str) -> str:
+
+async def login_password(client: Client, password: str):
     try:
         await client.check_password(password=password)
         global session_string
@@ -57,7 +69,8 @@ async def login_password(client: Client, password: str) -> str:
     except Exception as e:
         return f"❌ Password error: {e}"
 
-async def logout_userbot() -> str:
+
+async def logout_userbot():
     global session_string, user_client
     try:
         if user_client:
@@ -71,12 +84,14 @@ async def logout_userbot() -> str:
     except Exception as e:
         return f"❌ Logout failed: {e}"
 
+
 async def get_userbot_groups():
     groups = []
     async for dialog in user_client.get_dialogs():
         if dialog.chat.type in ["group", "supergroup"]:
             groups.append(dialog.chat.id)
     return groups
+
 
 async def broadcast_to_groups(original_message, groups: list) -> dict:
     success, failed = 0, 0
@@ -93,5 +108,5 @@ async def broadcast_to_groups(original_message, groups: list) -> dict:
                 failed += 1
         except Exception:
             failed += 1
-        await asyncio.sleep(random.uniform(10, 30))
+        await asyncio.sleep(random.randint(10, 30))
     return {"success": success, "failed": failed, "total": len(groups)}
