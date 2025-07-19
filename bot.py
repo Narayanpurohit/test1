@@ -11,6 +11,33 @@ login_sessions = {}
 
 def is_admin(user_id):
     return user_id in ADMINS
+@bot.on_message(filters.command("groups"))
+async def list_groups(client, message: Message):
+    if not is_admin(message.from_user.id):
+        return
+
+    if not await userbot.is_logged_in():
+        return await message.reply("⚠️ Please login first using /login.")
+
+    await userbot.start_userbot()
+    groups = await userbot.get_userbot_groups()
+    
+    if not groups:
+        return await message.reply("❌ No groups found.")
+
+    msg = "**📋 Groups Joined:**\n"
+    for i, group_id in enumerate(groups, 1):
+        try:
+            chat = await userbot.user_client.get_chat(group_id)
+            msg += f"{i}. {chat.title} (`{group_id}`)\n"
+        except:
+            msg += f"{i}. [Failed to fetch name] (`{group_id}`)\n"
+
+    # Telegram limits messages to 4096 characters
+    if len(msg) > 4000:
+        with open("groups.txt", "w", encoding="utf-8") as f:
+            f.write(msg)
+        await message.reply_document("groups.txt", caption
 
 @bot.on_message(filters.command("start"))
 async def start(client, message: Message):
