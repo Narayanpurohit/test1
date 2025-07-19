@@ -37,7 +37,7 @@ async def list_groups(client, message: Message):
     if len(msg) > 4000:
         with open("groups.txt", "w", encoding="utf-8") as f:
             f.write(msg)
-        await message.reply_document("groups.txt", caption
+        await message.reply_document("groups.txt", caption)
 
 @bot.on_message(filters.command("start"))
 async def start(client, message: Message):
