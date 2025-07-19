@@ -1,85 +1,108 @@
+# bot.py
+
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors import UserNotParticipant, PeerIdInvalid, ChatAdminRequired
-from pyrogram.enums import ChatMemberStatus
-import asyncio
+from pyrogram.types import Message
+from config import API_ID, API_HASH, BOT_TOKEN, ADMINS
+from userbot import (
+    is_logged_in,
+    login_userbot,
+    complete_login,
+    logout_userbot,
+    get_userbot_groups,
+    broadcast_to_groups
+)
 
-API_ID = 26847865
-API_HASH = "0ef9fdd3e5f1ed49d4eb918a07b8e5d6"
-BOT_TOKEN = "6757393088:AAFa9YEslZ5cKZecTnG0wf_txnRC3q_xj60"
+pending_logins = {}
 
-# Channel info
-REQUIRED_CHANNEL_ID = -1002649752447  # Replace with your channel ID
-REDIRECT_BOT = "DriveOO1bot"
+bot = Client("controller-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-app = Client("redirect_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+def is_admin(user_id):
+    return user_id in ADMINS
 
-@app.on_message(filters.private & filters.command("start"))
-async def start_handler(client, message):
+@bot.on_message(filters.command("start"))
+async def start(client, message: Message):
+    if not is_admin(message.from_user.id):
+        return await message.reply("❌ You're not allowed to use this bot.")
+    await message.reply("🤖 Bot is ready. Use /login to start userbot session.")
+
+# ------------------------- LOGIN -------------------------
+
+@bot.on_message(filters.command("login"))
+async def login(client, message: Message):
+    if not is_admin(message.from_user.id):
+        return await message.reply("❌ Unauthorized.")
+    if is_logged_in():
+        return await message.reply("✅ Already logged in.")
+    await message.reply("📞 Please send your phone number in format +1234567890")
+    pending_logins[message.from_user.id] = {"step": "phone"}
+
+@bot.on_message(filters.command("logout"))
+async def logout(client, message: Message):
+    if not is_admin(message.from_user.id):
+        return await message.reply("❌ Unauthorized.")
+    if not is_logged_in():
+        return await message.reply("⚠️ Userbot is not logged in.")
+    msg = await message.reply("⏳ Logging out...")
+    result = await logout_userbot()
+    await msg.edit(result)
+
+@bot.on_message(filters.text & filters.private)
+async def handle_login_steps(client, message: Message):
     user_id = message.from_user.id
-    payload = message.command[1] if len(message.command) > 1 else None
-
-    if not payload:
-        await message.reply_text("Welcome! Please use a valid start link.")
+    if not is_admin(user_id):
         return
 
-    print(f"[DEBUG] User {user_id} started bot with payload: {payload}")
+    if user_id not in pending_logins:
+        return
 
-    # Check if user is in the required channel
-    try:
-        member = await client.get_chat_member(REQUIRED_CHANNEL_ID, user_id)
-        print(f"[DEBUG] User {user_id} status in channel: {member.status}")
+    data = pending_logins[user_id]
 
-        if member.status not in (
-            ChatMemberStatus.MEMBER,
-            ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER
-        ):
-            print(f"[DEBUG] User {user_id} is NOT a valid member")
-            raise UserNotParticipant
+    if data["step"] == "phone":
+        data["phone"] = message.text
+        response = await login_userbot(message.text)
+        await message.reply(response)
+        data["step"] = "code"
+
+    elif data["step"] == "code":
+        response = await complete_login(code=message.text)
+        if "2FA" in response:
+            await message.reply(response)
+            data["step"] = "password"
         else:
-            print(f"[DEBUG] User {user_id} IS a valid member")
+            await message.reply(response)
+            del pending_logins[user_id]
 
-    except UserNotParticipant:
-        print(f"[DEBUG] UserNotParticipant triggered for user {user_id}")
-        invite = await app.create_chat_invite_link(REQUIRED_CHANNEL_ID)
-        invite_link = invite.invite_link
-        try_again_link = f"https://t.me/{client.me.username}?start={payload}"
+    elif data["step"] == "password":
+        response = await complete_login(code=data.get("code"), password=message.text)
+        await message.reply(response)
+        del pending_logins[user_id]
 
-        await message.reply_text(
-            "You have to join this channel to use this bot.",
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton("Join Channel", url=invite_link),
-                    InlineKeyboardButton("Backup Channel", url="https://t.me/+jAgDPZtfjfRhMjM1")
-                ],
-                [InlineKeyboardButton("Try Again", url=try_again_link)]
-            ])
-        )
-        return
-    except ChatAdminRequired:
-        print(f"[ERROR] Bot is not admin in the channel!")
-        await message.reply_text("Error: Bot must be admin in the channel to check membership.")
-        return
-    except PeerIdInvalid:
-        print(f"[ERROR] Invalid channel ID: {REQUIRED_CHANNEL_ID}")
-        await message.reply_text("Error: Invalid channel configuration.")
-        return
-    except Exception as e:
-        print(f"[ERROR] Unexpected error while checking membership: {e}")
-        await message.reply_text("Something went wrong while checking your join status.")
-        return
+# ----------------------- BROADCAST -----------------------
 
-    # User is in channel, send redirect link
-    target_link = f"https://t.me/{REDIRECT_BOT}?start={payload}"
-    sent = await message.reply_text(
-        "This message will be deleted in 10 minutes. Use the link before that.",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Click here", url=target_link)]]
-        )
+@bot.on_message(filters.command("broadcast") & filters.reply)
+async def handle_broadcast(client: Client, message: Message):
+    if not is_admin(message.from_user.id):
+        return await message.reply("❌ Unauthorized.")
+
+    if not is_logged_in():
+        return await message.reply("⚠️ Userbot is not logged in. Use /login first.")
+
+    reply_msg = message.reply_to_message
+    status_msg = await message.reply("🔄 Fetching groups...")
+
+    groups = await get_userbot_groups()
+    if not groups:
+        return await status_msg.edit("⚠️ No groups found.")
+
+    await status_msg.edit(f"📢 Broadcasting to {len(groups)} groups...")
+
+    stats = await broadcast_to_groups(reply_msg, groups)
+
+    await status_msg.edit(
+        f"✅ Broadcast Complete\n\n"
+        f"✔️ Sent: {stats['success']}\n"
+        f"❌ Failed: {stats['failed']}\n"
+        f"📊 Total: {stats['total']} groups"
     )
 
-    await asyncio.sleep(600)
-    await sent.delete()
-
-app.run()
+bot.run()
