@@ -1,4 +1,2 @@
-pyrogram 
-imdbpy 
-requests 
-wordpress-api
+pyrogram==2.0.106
+tgcrypto
